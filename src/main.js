@@ -124,6 +124,7 @@ function renderRoute(data){
 }
 function fit(){if(state.route){const bounds=L.geoJSON(state.route.geometry).getBounds();map.fitBounds(bounds,{padding:[50,65]});}else map.setView([state.start.lat,state.start.lon],mode()==='foot'?14:12);}
 $('#fit').addEventListener('click',fit);
+$('#locate-map').addEventListener('click',()=>$('#location').click());
 async function showDetail(m){
   const id=++state.detailId;const dialog=$('#monument-dialog');const content=$('#monument-content');content.replaceChildren();
   content.append(el('span',`RIJKSMONUMENT ${m.number}`,'eyebrow'));const heading=el('h2',title(m));heading.id='monument-title';content.append(heading);
