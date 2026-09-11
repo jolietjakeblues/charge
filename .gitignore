@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.env*
+!.env.example
+test-results/
+
+# Oude CHARGE-documenten, prototypes en rapporten
+charge_old/
+charge/_old/

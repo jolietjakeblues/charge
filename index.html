@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#163f45"><meta name="description" content="Wandel en fiets langs rijksmonumenten. Stel je eigen erfgoedroute samen met CHARGE.">
+  <title>CHARGE | Jouw erfgoedroute</title><link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <a class="skip" href="#planner">Naar route instellen</a>
+  <header class="header"><a class="brand" href="/" aria-label="CHARGE startpagina"><span class="brand-mark" aria-hidden="true">C</span>CHARGE<span class="brand-sub">Jouw erfgoedroute</span></a><span class="edition">Eerste versie</span></header>
+  <main class="workspace">
+    <aside class="sidebar" id="planner">
+      <div class="intro"><span class="eyebrow">OP PAD MET ERFGOED</span><h1>Waar gaan we heen?</h1><p>Ontdek rijksmonumenten onderweg.</p></div>
+      <form id="route-form">
+        <fieldset class="mode"><legend class="sr-only">Hoe ga je op pad?</legend><label><input type="radio" name="mode" value="foot" checked><span>Wandelen</span></label><label><input type="radio" name="mode" value="bike"><span>Fietsen</span></label></fieldset>
+        <label class="field-label" for="start">Jouw vertrekpunt</label>
+        <div class="search-row"><input id="start" type="search" value="Amersfoort" placeholder="Plaats of adres" autocomplete="off" maxlength="150"><button type="button" id="search" class="secondary">Zoek</button></div>
+        <ul id="search-results" class="search-results" aria-label="Gevonden plaatsen" hidden></ul>
+        <div class="start-actions"><button type="button" id="location" class="text-button">Gebruik mijn locatie</button><button type="button" id="pick-start" class="text-button" aria-pressed="false">Kies op kaart</button></div>
+        <p id="selected-start" class="hint">Vertrek: centrum Amersfoort</p>
+        <fieldset class="budget"><legend>Hoeveel ruimte heb je?</legend><div class="budget-options"><label><input name="budget" type="radio" value="distance" checked> Afstand</label><label><input name="budget" type="radio" value="time"> Tijd</label></div><div class="range-heading"><label id="range-label" for="amount">Gewenste afstand</label><output id="amount-output" for="amount">5 km</output></div><input id="amount" type="range" min="2" max="15" step="1" value="5"><div class="range-scale"><span id="range-min">2 km</span><span id="range-max">15 km</span></div></fieldset>
+        <label class="field-label" for="theme">Wat wil je ontdekken?</label><select id="theme"><option value="all">Alle rijksmonumenten</option><option value="religious">Religieus erfgoed</option><option value="industrial">Industrie en molens</option><option value="defence">Verdediging en vestingen</option><option value="archaeology">Archeologie</option></select>
+        <button type="submit" id="generate" class="primary">Maak mijn rondje <span aria-hidden="true">↗</span></button>
+        <p class="hint">Je route eindigt bij je vertrekpunt. De afstand is een richtwaarde.</p>
+      </form>
+      <p id="status" role="status" aria-live="polite" class="status">De kaart staat klaar. Kies je route.</p>
+      <section id="route-result" aria-labelledby="result-heading" hidden></section>
+      <details class="privacy"><summary>Over je gegevens en deze versie</summary><p>Geen account, cookies of opgeslagen routegeschiedenis. Je keuzes blijven alleen tijdens dit bezoek in het geheugen.</p><p>Voor kaarten, routes, plaatsnamen en voorzieningen gebruiken we externe diensten. Die ontvangen de informatie die nodig is voor je verzoek, zoals kaartgebied of vertrekpunt. Locatiegebruik vraagt toestemming. Stop je locatie met dezelfde knop.</p><p>Dit is een proefversie. Openingstijden en toegankelijkheid van monumenten zijn niet gecontroleerd. Volg onderweg de verkeersregels en aanwijzingen ter plaatse.</p></details>
+    </aside>
+    <section class="map-panel" aria-label="Routekaart"><div id="map" role="region" aria-label="Interactieve kaart met rijksmonumenten"></div><div class="map-top"><span id="map-caption">Amersfoort en omgeving</span><button type="button" id="fit" class="map-button">Overzicht</button></div><fieldset class="map-layers"><legend>Op de kaart</legend><label><input type="checkbox" name="poi" value="cafe"> Cafés</label><label><input type="checkbox" name="poi" value="parking"> Parkeren</label><label><input type="checkbox" name="poi" value="toilets"> Toiletten</label></fieldset><div class="map-key"><span class="key-dot"></span> Rijksmonument <span class="key-line"></span> Jouw route</div><p id="map-status" class="map-status" role="status" hidden></p></section>
+  </main>
+  <dialog id="monument-dialog" aria-labelledby="monument-title"><button type="button" id="close-dialog" class="dialog-close" aria-label="Sluiten">×</button><div id="monument-content"></div></dialog>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "charge",
+  "main": "server/index.ts",
+  "compatibility_date": "2026-09-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  "observability": { "enabled": false },
+  "vars": {
+    "RCE_MCP_URL": "https://rce-cho-mcp.onrender.com/mcp",
+    "ROUTING_BASE_URL": "https://routing.openstreetmap.de",
+    "OVERPASS_URL": "https://overpass-api.de/api/interpreter"
+  }
+}
