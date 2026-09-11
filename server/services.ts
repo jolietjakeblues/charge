@@ -34,7 +34,7 @@ export async function roadRoute(base: string, mode: Mode, points: Point[]): Prom
 export async function pois(base: string, center: Point, radius: number, kinds: string[]) {
   if(kinds.length===0 || kinds.some(k=>!['cafe','parking','toilets'].includes(k)))throw new HttpError(400,'Kies een geldige kaartlaag.');
   const query=`[out:json][timeout:15];nwr(around:${Math.round(radius)},${center.lat},${center.lon})[amenity~"^(${kinds.join('|')})$"];out center 250;`;
-  const d=record(await boundedJson(await fetch(base,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({data:query}),signal:AbortSignal.timeout(20000)})));
+  const d=record(await boundedJson(await fetch(base,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','User-Agent':'CHARGE/0.1 (heritage walking and cycling prototype)'},body:new URLSearchParams({data:query}),signal:AbortSignal.timeout(20000)})));
   if(!Array.isArray(d.elements))throw new HttpError(502,'Voorzieningen zijn tijdelijk niet beschikbaar.');
   return d.elements.flatMap(e=>{const r=record(e);const c=r.center?record(r.center):r;const tags=record(r.tags||{});return typeof c.lat==='number'&&typeof c.lon==='number'?[{lat:c.lat,lon:c.lon,kind:tags.amenity,name:typeof tags.name==='string'?tags.name:'',openingHours:typeof tags.opening_hours==='string'?tags.opening_hours:''}]:[];});
 }
