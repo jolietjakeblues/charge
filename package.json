@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && node scripts/inline-css.mjs",
     "dev": "npm run build && wrangler dev --port 8787",
     "deploy": "npm run build && wrangler deploy",
     "check": "tsc --noEmit",
