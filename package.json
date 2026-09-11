@@ -8,6 +8,7 @@
     "dev": "npm run build && wrangler dev --port 8787",
     "deploy": "npm run build && wrangler deploy",
     "check": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "types": "wrangler types"
   },
   "dependencies": {
