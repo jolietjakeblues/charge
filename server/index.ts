@@ -63,7 +63,10 @@ export default {
           adjusted=Math.max(800,Math.min(target*2,adjusted*target/Math.max(1,route.distance)));
         }
         if(!best)throw new HttpError(422,'Geen geschikte rondroute gevonden. Probeer een ander vertrekpunt of thema.');
-        return json({geometry:best.route.geometry,distance:best.route.distance,durationMinutes:Math.round(best.route.distance/(mode==='foot'?4500:15000)*60),stops:best.stops,target,mode,truncated,source:'RCE via RCE-MCP',deviation:Math.abs(best.route.distance-target)/target});
+        const deviation=Math.abs(best.route.distance-target)/target;
+        // Sparse monument areas can force a route far past what "richtwaarde" can defend; refuse rather than mislead.
+        if(deviation>.5)throw new HttpError(422,'In dit gebied liggen te weinig rijksmonumenten dicht bij elkaar voor een route rond je gewenste afstand. Probeer een grotere afstand of tijd, een ander thema, of een ander vertrekpunt.');
+        return json({geometry:best.route.geometry,distance:best.route.distance,durationMinutes:Math.round(best.route.distance/(mode==='foot'?4500:15000)*60),stops:best.stops,target,mode,truncated,source:'RCE via RCE-MCP',deviation});
       }
       return json({error:'Deze functie bestaat niet.'},404);
     } catch(error){
