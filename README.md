@@ -20,6 +20,18 @@ De eerste versie bevat:
 
 Inloggen, opslaan, badges, quizzen, sociale functies en publicatie in de app stores vallen buiten deze versie.
 
+## Aan de slag
+
+```
+npm install
+npm run dev      # bouwt de app en start een lokale Cloudflare Worker op :8787
+npm test         # draait de tests voor de routelogica
+npm run check    # TypeScript-check zonder te compileren
+npm run deploy   # bouwt en deployt naar Cloudflare
+```
+
+Geen extra configuratie nodig: de externe diensten (RCE-CHO, OSRM, Overpass) staan als publieke URL's in `wrangler.jsonc`.
+
 ## Bronnen
 
 - Rijksdienst voor het Cultureel Erfgoed: https://www.cultureelerfgoed.nl/

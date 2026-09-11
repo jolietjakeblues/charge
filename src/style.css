@@ -69,8 +69,8 @@ input,select,button{color-scheme:light dark}
 
 /* ---------- form ---------- */
 #route-form{display:flex;flex-direction:column;gap:20px}
-fieldset{border:1px solid var(--border);border-radius:14px;padding:14px 16px 16px;margin:0;background:var(--panel)}
-legend{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);padding:0 6px}
+fieldset{position:relative;border:1px solid var(--border);border-radius:14px;padding:30px 16px 16px;margin:0;background:var(--panel)}
+legend{position:absolute;top:10px;left:16px;margin:0;padding:0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
 .field-label{font-size:13px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px}
 
 .mode{display:flex;padding:5px;gap:4px}
