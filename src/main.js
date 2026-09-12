@@ -149,13 +149,13 @@ function schedulePois(){clearTimeout(poiTimer);state.poiId++;poisLayer.clearLaye
 async function loadPois(){
   const kinds=$$('input[name="poi"]:checked').map(i=>i.value);if(!kinds.length){if(!state.controller||state.route)mapStatus('');return;}
   const center=map.getCenter(),bounds=map.getBounds();const radius=Math.ceil(center.distanceTo(bounds.getNorthEast()));
-  if(radius>4000){mapStatus('Zoom verder in om cafés, parkeerplaatsen en toiletten te bekijken.');return;}
+  if(radius>4000){mapStatus('Zoom verder in om cafés, parkeerplaatsen, toiletten en AED\'s te bekijken.');return;}
   const id=state.poiId;mapStatus('Voorzieningen ophalen…');
   try{
     const data=await api(`/api/pois?${new URLSearchParams({lat:center.lat,lon:center.lng,radius:Math.max(100,radius),kinds:kinds.join(',')})}`);if(id!==state.poiId)return;
-    poisLayer.clearLayers();const labels={cafe:'Café',parking:'Parkeerplaats',toilets:'Toilet'},symbols={cafe:'C',parking:'P',toilets:'WC'};
+    poisLayer.clearLayers();const labels={cafe:'Café',parking:'Parkeerplaats',toilets:'Toilet',aed:'AED'},symbols={cafe:'C',parking:'P',toilets:'WC',aed:'+'};
     for(const poi of data.pois){const popup=el('div');popup.append(el('strong',poi.name||labels[poi.kind]));if(poi.name)popup.append(el('div',labels[poi.kind]));if(poi.openingHours)popup.append(el('p',`Openingstijden volgens OpenStreetMap: ${poi.openingHours}`));
-      const marker=L.marker([poi.lat,poi.lon],{icon:L.divIcon({className:'marker-poi',html:symbols[poi.kind]||'P',iconSize:[28,28]})}).bindPopup(popup).addTo(poisLayer);marker.getElement()?.setAttribute('aria-label',poi.name||labels[poi.kind]);}
+      const marker=L.marker([poi.lat,poi.lon],{icon:L.divIcon({className:`marker-poi marker-poi-${poi.kind}`,html:symbols[poi.kind]||'P',iconSize:[28,28]})}).bindPopup(popup).addTo(poisLayer);marker.getElement()?.setAttribute('aria-label',poi.name||labels[poi.kind]);}
     mapStatus(data.pois.length?'': 'Geen voorzieningen van dit type gevonden in dit kaartgebied.');
   }catch(error){if(id===state.poiId)mapStatus('Voorzieningen laden lukt nu niet. Zoom in of probeer de kaartlaag opnieuw.');}
 }

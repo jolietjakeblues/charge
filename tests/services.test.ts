@@ -57,3 +57,22 @@ test('pois: drops elements whose amenity was not part of the request', async () 
   const result = await withFetch(fakeOverpass(elements), () => pois('https://overpass.example', center, 500, ['cafe']));
   assert.equal(result.length, 0);
 });
+
+test('pois: "aed" queries the emergency tag namespace, not amenity', async () => {
+  let sentQuery = '';
+  const fetchImpl = (async (_url: string, init?: RequestInit) => {
+    sentQuery = String(new URLSearchParams(init?.body as string).get('data'));
+    return new Response(JSON.stringify({ elements: [] }), { status: 200 });
+  }) as typeof fetch;
+  await withFetch(fetchImpl, () => pois('https://overpass.example', center, 500, ['aed']));
+  assert.match(sentQuery, /emergency~"\^\(defibrillator\)\$"/);
+});
+
+test('pois: combines amenity and emergency clauses when both are requested', async () => {
+  const elements = [
+    { lat: 52.1, lon: 5.3, tags: { amenity: 'cafe', name: 'Grand Café' } },
+    { lat: 52.1, lon: 5.3, tags: { emergency: 'defibrillator' } },
+  ];
+  const result = await withFetch(fakeOverpass(elements), () => pois('https://overpass.example', center, 500, ['cafe', 'aed']));
+  assert.deepEqual(result.map(p => p.kind).sort(), ['aed', 'cafe']);
+});
