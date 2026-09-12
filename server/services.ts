@@ -1,5 +1,5 @@
 import type { Point, Mode } from './routing.ts';
-export class HttpError extends Error { constructor(public status: number, message: string) {super(message);} }
+export class HttpError extends Error { status: number; constructor(status: number, message: string) {super(message);this.status=status;} }
 export async function boundedJson(response: Response, limit=2500000): Promise<unknown> {
   if(!response.ok) throw new HttpError(502,'Een gegevensdienst is tijdelijk niet beschikbaar. Probeer het later opnieuw.');
   if(!response.body) throw new HttpError(502,'De gegevensdienst gaf een leeg antwoord.');

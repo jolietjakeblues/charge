@@ -1,7 +1,7 @@
 export type Point = { lat: number; lon: number };
 export type Monument = Point & { uri: string; number: string; name: string; function: string };
 export type Mode = 'foot' | 'bike';
-export const themes = ['all', 'religious', 'industrial', 'defence', 'archaeology'] as const;
+export const themes = ['all', 'religious', 'industrial', 'defence', 'archaeology', 'castles', 'government', 'cemeteries', 'warehouses', 'culture'] as const;
 export type Theme = typeof themes[number];
 export function distance(a: Point, b: Point): number {
   const rad = Math.PI / 180;

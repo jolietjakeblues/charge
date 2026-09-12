@@ -43,11 +43,15 @@ function renderMonuments(monuments,stops=[]){
   const list=stops.length?stops:monuments;
   for(const m of list){
     const nr=stopNumbers.get(m.number);
-    const marker=L.marker([m.lat,m.lon],{icon:L.divIcon({className:'marker-monument',html:nr?String(nr):'•',iconSize:nr?[28,28]:[18,18]})});
+    // Before a route exists there can be hundreds of monuments on screen; making each one an
+    // individual tab stop would force keyboard users through the whole list before reaching the
+    // map controls. Keyboard/screen-reader access to a monument's detail is available via the
+    // stop list once a route (and its handful of numbered stops) exists.
+    const marker=L.marker([m.lat,m.lon],{keyboard:!!nr,icon:L.divIcon({className:'marker-monument',html:nr?String(nr):'•',iconSize:nr?[28,28]:[18,18]})});
     const popup=el('div');popup.append(el('strong',title(m)),el('div',`Rijksmonument ${m.number}`));
     const button=el('button','Bekijk monument');button.type='button';button.addEventListener('click',()=>void showDetail(m));popup.append(button);
-    marker.bindPopup(popup).addTo(monumentsLayer);marker.on('add',()=>marker.getElement()?.setAttribute('aria-label',title(m)));
-    marker.getElement()?.setAttribute('aria-label',title(m));
+    marker.bindPopup(popup).addTo(monumentsLayer);
+    if(nr)marker.getElement()?.setAttribute('aria-label',title(m));
   }
 }
 async function loadMonuments(){
@@ -132,7 +136,11 @@ async function showDetail(m){
   const description=el('p','Omschrijving ophalen…','description');content.append(description);
   const source=el('a','Bekijk in het Monumentenregister','source-link');source.href=`https://monumentenregister.cultureelerfgoed.nl/monumenten/${encodeURIComponent(m.number)}`;source.target='_blank';source.rel='noopener noreferrer';content.append(source);
   if(!dialog.open)dialog.showModal();
-  try{const data=await api(`/api/monument?number=${encodeURIComponent(m.number)}`);if(id!==state.detailId)return;description.textContent=data.descriptions.length?data.descriptions.join('\n\n'):'Voor dit monument is geen omschrijving opgehaald. Bekijk de bron voor meer informatie.';}
+  try{
+    const data=await api(`/api/monument?number=${encodeURIComponent(m.number)}`);if(id!==state.detailId)return;
+    description.textContent=data.descriptions.length?data.descriptions.join('\n\n'):'Voor dit monument is geen omschrijving opgehaald. Bekijk de bron voor meer informatie.';
+    if(data.kennisbank){const kennisbank=el('a','Bekijk in de Kennisbank Cultureel Erfgoed','source-link');kennisbank.href=data.kennisbank;kennisbank.target='_blank';kennisbank.rel='noopener noreferrer';content.append(kennisbank);}
+  }
   catch(error){if(id===state.detailId)description.textContent='De omschrijving is nu niet beschikbaar. Je kunt het Monumentenregister openen.';}
 }
 $('#close-dialog').addEventListener('click',()=>$('#monument-dialog').close());

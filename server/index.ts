@@ -13,6 +13,7 @@ function themeFrom(value:unknown):Theme { if(typeof value!=='string'||!themes.in
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url=new URL(request.url);
+    if(url.pathname==='/favicon.ico')return Response.redirect(new URL('/favicon.svg',url).toString(),301);
     if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
     try {
       if(request.headers.get('Sec-Fetch-Site')==='cross-site')throw new HttpError(403,'Open deze functie vanuit CHARGE.');
