@@ -3,30 +3,33 @@ import { distance, type Point } from './routing.ts';
 
 export type LonLat = [number, number];
 type Ring = LonLat[];
-type Geom = { kind: 'point'; point: LonLat } | { kind: 'line'; paths: LonLat[][] } | { kind: 'polygon'; rings: Ring[] };
+type Geom = { kind: 'point'; point: LonLat } | { kind: 'line'; paths: LonLat[][] } | { kind: 'polygon'; polygons: Ring[][] };
 export type HeritageMatch = { kind: 'gezicht' | 'werelderfgoed' | 'linie'; name: string };
 type Bbox = [number, number, number, number];
 
 function numberPair(text: string): LonLat { const [lon, lat] = text.trim().split(/\s+/).map(Number); return [lon, lat]; }
 function parseGroup(s: string, i: number): [unknown[], number] {
   i++; const items: unknown[] = [];
-  while (s[i] !== ')') {
+  while (i < s.length && s[i] !== ')') {
     if (s[i] === '(') { const [child, next] = parseGroup(s, i); items.push(child); i = next; }
     else if (s[i] === ',' || /\s/.test(s[i])) { i++; }
-    else { let j = i; while (s[j] !== ',' && s[j] !== ')') j++; items.push(numberPair(s.slice(i, j))); i = j; }
+    else { let j = i; while (j < s.length && s[j] !== ',' && s[j] !== ')') j++; items.push(numberPair(s.slice(i, j))); i = j; }
   }
+  if (s[i] !== ')') throw new Error('Onvolledige WKT-geometrie.');
   return [items, i + 1];
 }
 export function parseWkt(wkt: string): Geom | null {
   const match = wkt.trim().match(/^([A-Za-z]+)\s*\(/);
   if (!match || match.index === undefined) return null;
   const type = match[1].toLowerCase();
-  const [items] = parseGroup(wkt, wkt.indexOf('(', match.index));
+  let items: unknown[];
+  try { [items] = parseGroup(wkt, wkt.indexOf('(', match.index)); } catch { return null; }
   if (type === 'point') return { kind: 'point', point: items[0] as LonLat };
   if (type === 'linestring') return { kind: 'line', paths: [items as LonLat[]] };
   if (type === 'multilinestring') return { kind: 'line', paths: items as LonLat[][] };
-  if (type === 'polygon') return { kind: 'polygon', rings: items as Ring[] };
-  if (type === 'multipolygon') return { kind: 'polygon', rings: (items as Ring[][]).flat(1) };
+  // Eerste ring van een polygon is de buitenring, elke volgende ring is een gat (uitgesloten gebied).
+  if (type === 'polygon') return { kind: 'polygon', polygons: [items as Ring[]] };
+  if (type === 'multipolygon') return { kind: 'polygon', polygons: items as Ring[][] };
   return null;
 }
 // Benaderingsformule RD -> WGS84 (Schreutelkamp/Strang van Hees), coëfficiënten via regressie
@@ -42,7 +45,7 @@ export function rdToWgs84([x, y]: LonLat): LonLat {
 function mapGeom(geom: Geom, fn: (p: LonLat) => LonLat): Geom {
   if (geom.kind === 'point') return { kind: 'point', point: fn(geom.point) };
   if (geom.kind === 'line') return { kind: 'line', paths: geom.paths.map(path => path.map(fn)) };
-  return { kind: 'polygon', rings: geom.rings.map(ring => ring.map(fn)) };
+  return { kind: 'polygon', polygons: geom.polygons.map(poly => poly.map(ring => ring.map(fn))) };
 }
 function bbox(points: LonLat[]): Bbox {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -69,18 +72,23 @@ export function pointInRing(p: LonLat, ring: Ring): boolean {
   }
   return inside;
 }
+function pointInPolygon(p: LonLat, polygon: Ring[]): boolean {
+  if (!polygon.length || !pointInRing(p, polygon[0])) return false;
+  for (let k = 1; k < polygon.length; k++) if (pointInRing(p, polygon[k])) return false;
+  return true;
+}
 export function routeMatchesGeometry(route: LonLat[], geom: Geom, routeBbox: Bbox, thresholdMeters = 75): boolean {
   if (geom.kind === 'point') return route.some(p => distance({ lon: p[0], lat: p[1] } as Point, { lon: geom.point[0], lat: geom.point[1] } as Point) < thresholdMeters);
-  const points = geom.kind === 'line' ? geom.paths.flat() : geom.rings.flat();
+  const points = geom.kind === 'line' ? geom.paths.flat() : geom.polygons.flat(2);
   if (!points.length || !bboxOverlap(routeBbox, bbox(points))) return false;
   if (geom.kind === 'line') {
     for (let i = 0; i < route.length - 1; i++) for (const path of geom.paths) for (let j = 0; j < path.length - 1; j++) if (segmentsIntersect(route[i], route[i + 1], path[j], path[j + 1])) return true;
     return false;
   }
-  if (geom.rings.some(ring => pointInRing(route[0], ring))) return true;
+  if (geom.polygons.some(poly => pointInPolygon(route[0], poly))) return true;
   for (let i = 0; i < route.length - 1; i++) {
-    if (geom.rings.some(ring => pointInRing(route[i + 1], ring))) return true;
-    for (const ring of geom.rings) for (let j = 0; j < ring.length - 1; j++) if (segmentsIntersect(route[i], route[i + 1], ring[j], ring[j + 1])) return true;
+    if (geom.polygons.some(poly => pointInPolygon(route[i + 1], poly))) return true;
+    for (const poly of geom.polygons) for (const ring of poly) for (let j = 0; j < ring.length - 1; j++) if (segmentsIntersect(route[i], route[i + 1], ring[j], ring[j + 1])) return true;
   }
   return false;
 }

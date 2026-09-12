@@ -1,5 +1,5 @@
 import {nearby,detail} from './rce.ts';
-import {heritageMatches} from './heritage-areas.ts';
+import {heritageMatches,type HeritageMatch} from './heritage-areas.ts';
 import {distance,validPoint,targetDistance,selectStops,themes,type Theme,type Mode,type Point,type Monument} from './routing.ts';
 import {geocode,roadRoute,pois,boundedJson,HttpError,type RoadRoute} from './services.ts';
 
@@ -70,8 +70,11 @@ export default {
         const deviation=Math.abs(best.route.distance-target)/target;
         // Sparse monument areas can force a route far past what "richtwaarde" can defend; refuse rather than mislead.
         if(deviation>.5)throw new HttpError(422,'In dit gebied liggen te weinig rijksmonumenten dicht bij elkaar voor een route rond je gewenste afstand. Probeer een grotere afstand of tijd, een ander thema, of een ander vertrekpunt.');
-        // Bijzondere gebieden zijn context, geen kernfunctie: een falende opzoeking mag de route niet blokkeren.
-        const heritage=await heritageMatches(env.RCE_MCP_URL,best.route.geometry.coordinates).catch(()=>[]);
+        // Bijzondere gebieden zijn context, geen kernfunctie: een falende of trage opzoeking mag de route niet blokkeren.
+        const heritage=await Promise.race([
+          heritageMatches(env.RCE_MCP_URL,best.route.geometry.coordinates).catch(()=>[] as HeritageMatch[]),
+          new Promise<HeritageMatch[]>(resolve=>setTimeout(()=>resolve([]),8000)),
+        ]);
         return json({geometry:best.route.geometry,distance:best.route.distance,durationMinutes:Math.round(best.route.distance/(mode==='foot'?4500:15000)*60),stops:best.stops,target,mode,truncated,source:'RCE via RCE-MCP',deviation,heritage});
       }
       return json({error:'Deze functie bestaat niet.'},404);

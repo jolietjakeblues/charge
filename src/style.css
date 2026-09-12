@@ -135,6 +135,7 @@ button.primary:disabled{opacity:.65;cursor:progress}
 
 /* ---------- route result ---------- */
 #route-result{display:flex;flex-direction:column;gap:16px;border-top:1px solid var(--border);padding-top:18px}
+#route-result[hidden]{display:none}
 #route-result h2{font-size:20px}
 .route-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .route-stats div{display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}

@@ -16,15 +16,27 @@ test('parseWkt: parses a multilinestring as multiple paths', () => {
   assert.deepEqual(geom, { kind: 'line', paths: [[[5.0, 52.0], [5.1, 52.1]], [[6.0, 53.0], [6.1, 53.1]]] });
 });
 
-test('parseWkt: parses a polygon as a single ring', () => {
+test('parseWkt: parses a polygon as a single polygon with one ring', () => {
   const geom = parseWkt('POLYGON ((5.0 52.0, 5.1 52.0, 5.1 52.1, 5.0 52.0))');
-  assert.deepEqual(geom, { kind: 'polygon', rings: [[[5.0, 52.0], [5.1, 52.0], [5.1, 52.1], [5.0, 52.0]]] });
+  assert.deepEqual(geom, { kind: 'polygon', polygons: [[[[5.0, 52.0], [5.1, 52.0], [5.1, 52.1], [5.0, 52.0]]]] });
 });
 
-test('parseWkt: flattens a multipolygon into one ring list', () => {
+test('parseWkt: parses a polygon with a hole as an outer ring plus an inner ring', () => {
+  const geom = parseWkt('POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 6 4, 6 6, 4 6, 4 4))');
+  assert.equal(geom?.kind, 'polygon');
+  assert.equal((geom as { polygons: unknown[][] }).polygons.length, 1);
+  assert.equal((geom as { polygons: unknown[][] }).polygons[0].length, 2);
+});
+
+test('parseWkt: keeps each multipolygon polygon as its own ring list', () => {
   const geom = parseWkt('MULTIPOLYGON (((5.0 52.0, 5.1 52.0, 5.1 52.1, 5.0 52.0)), ((6.0 53.0, 6.1 53.0, 6.1 53.1, 6.0 53.0)))');
   assert.equal(geom?.kind, 'polygon');
-  assert.equal((geom as { rings: unknown[] }).rings.length, 2);
+  assert.equal((geom as { polygons: unknown[][] }).polygons.length, 2);
+});
+
+test('parseWkt: returns null instead of hanging on an unterminated geometry', () => {
+  assert.equal(parseWkt('POINT (5 52'), null);
+  assert.equal(parseWkt('POLYGON ((5.0 52.0, 5.1 52.0'), null);
 });
 
 test('parseWkt: is case-insensitive and tolerates missing space before the parenthesis', () => {
@@ -50,20 +62,28 @@ test('rdToWgs84: a point far from the origin still lands within a meter of the r
 
 test('routeMatchesGeometry: detects a route crossing a polygon', () => {
   const route: [number, number][] = [[4.9, 51.9], [5.05, 52.05], [5.2, 52.2]];
-  const polygon = { kind: 'polygon' as const, rings: [[[5.0, 52.0], [5.1, 52.0], [5.1, 52.1], [5.0, 52.1], [5.0, 52.0]] as [number, number][]] };
+  const polygon = { kind: 'polygon' as const, polygons: [[[[5.0, 52.0], [5.1, 52.0], [5.1, 52.1], [5.0, 52.1], [5.0, 52.0]] as [number, number][]]] };
   assert.equal(routeMatchesGeometry(route, polygon, [4.9, 51.9, 5.2, 52.2]), true);
 });
 
 test('routeMatchesGeometry: a distant polygon does not match', () => {
   const route: [number, number][] = [[4.9, 51.9], [5.05, 52.05], [5.2, 52.2]];
-  const polygon = { kind: 'polygon' as const, rings: [[[10, 50], [10.1, 50], [10.1, 50.1], [10, 50.1], [10, 50]] as [number, number][]] };
+  const polygon = { kind: 'polygon' as const, polygons: [[[[10, 50], [10.1, 50], [10.1, 50.1], [10, 50.1], [10, 50]] as [number, number][]]] };
   assert.equal(routeMatchesGeometry(route, polygon, [4.9, 51.9, 5.2, 52.2]), false);
 });
 
 test('routeMatchesGeometry: a route entirely inside a polygon still matches', () => {
   const route: [number, number][] = [[5.02, 52.02], [5.03, 52.03]];
-  const polygon = { kind: 'polygon' as const, rings: [[[5.0, 52.0], [5.1, 52.0], [5.1, 52.1], [5.0, 52.1], [5.0, 52.0]] as [number, number][]] };
+  const polygon = { kind: 'polygon' as const, polygons: [[[[5.0, 52.0], [5.1, 52.0], [5.1, 52.1], [5.0, 52.1], [5.0, 52.0]] as [number, number][]]] };
   assert.equal(routeMatchesGeometry(route, polygon, [5.0, 52.0, 5.1, 52.1]), true);
+});
+
+test('routeMatchesGeometry: a route inside a polygon hole does not match', () => {
+  const route: [number, number][] = [[5.045, 52.045], [5.055, 52.055]];
+  const outer: [number, number][] = [[5.0, 52.0], [5.1, 52.0], [5.1, 52.1], [5.0, 52.1], [5.0, 52.0]];
+  const hole: [number, number][] = [[5.04, 52.04], [5.06, 52.04], [5.06, 52.06], [5.04, 52.06], [5.04, 52.04]];
+  const polygon = { kind: 'polygon' as const, polygons: [[outer, hole]] };
+  assert.equal(routeMatchesGeometry(route, polygon, [5.0, 52.0, 5.1, 52.1]), false);
 });
 
 test('routeMatchesGeometry: a point within the threshold distance matches', () => {
