@@ -2,11 +2,11 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { distance, type Point, type Monument, type Theme } from './routing.ts';
 
-const prefix = `PREFIX ceo: <https://linkeddata.cultureelerfgoed.nl/def/ceo#>
+export const prefix = `PREFIX ceo: <https://linkeddata.cultureelerfgoed.nl/def/ceo#>
 PREFIX geo: <http://www.opengis.net/ont/geosparql#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>`;
-const graph = 'https://linkeddata.cultureelerfgoed.nl/graph/instanties-rce';
+export const graph = 'https://linkeddata.cultureelerfgoed.nl/graph/instanties-rce';
 type Row = Record<string, {value:string}>;
 function isRecord(v: unknown): v is Record<string, unknown> { return !!v && typeof v==='object'; }
 export function parseBindings(data: unknown): Row[] {
