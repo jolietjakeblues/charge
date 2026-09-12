@@ -1,26 +1,19 @@
-# CHARGE — todo & ideeën
+# Backlog
 
-## Openstaand
+Bijgewerkt: 2026-09-12
 
-- **Echte help/uitleg in de app** — het huidige "Over je gegevens en deze versie"-blok is een privacyverklaring, geen gebruikshulp. Denk aan: wat de genummerde stops betekenen, waarom een route kan afwijken van je gewenste afstand, wat de kaartlagen (cafés/parkeren/toiletten) laten zien.
-- **Testdekking uitbreiden naar de service-laag** — `tests/routing.test.ts` dekt de pure functies (afstand, stop-selectie, budgetvalidatie). `server/services.ts` (geocode, roadRoute, pois) en `server/index.ts` (request-validatie) zijn nog ongetest; dat vereist gemockte `fetch`-calls.
-- **Overpass-betrouwbaarheid** — de publieke Overpass-instantie (overpass-api.de) is gedeeld en kan onder druk 429/504 geven. Overwegen: retry met backoff, of een eigen/betaalde Overpass-instantie voor productie.
-- **Observability aanzetten** — `wrangler.jsonc` heeft `observability.enabled: false`. Handig om aan te zetten zodra de app echt gebruikt wordt, voor het opsporen van fouten in productie.
-- **Dark mode handmatig doorlopen** — de `prefers-color-scheme`-variant is nooit los gecontroleerd (alleen de lichte modus is visueel getest); check radio-pills, slider, checkboxes en contrast.
-- **Mobiel end-to-end testen** — geolocatie ("Gebruik mijn locatie") en "Kies op kaart" zijn alleen functioneel getest op desktop-breedte; nog niet op een echt mobiel toestel.
+## Open items
 
-## Opschonen (lage prioriteit)
+- [x] **Kaartlagen fixen: parkeerplaatsen, openbare toiletten, cafes** — 2026-09-12: `server/services.ts` breidde "Cafés" uit met OSM `amenity=bar|pub` (kroegen/bruine cafés) en filtert nu `access=private/no` (geen privéparkeren/-toiletten meer als "openbaar"); `src/main.js` toonde bij naamloze voorzieningen (meestal toiletten/parking) het label dubbel in de popup ("Toilet / Toilet") — nu alleen als er een echte naam is.
+- [x] **Toegankelijkheid verbeteren** — 2026-09-12 WCAG 2.1 AA-audit uitgevoerd op de draaiende app. Twee bevindingen gefixed: (1) in donker kleurschema (`prefers-color-scheme:dark`) faalden meerdere tekstkleuren de 4.5:1-contrasteis (primaire knop, monument-nummers, foutmeldingen, "5 km"-weergave, eyebrow-label, tekstlinks) — nieuwe tokens `--accent-text`/`--moss-text` (`src/style.css`) lossen dit op zonder de bestaande achtergrondkleuren (die wél voldeden) te breken; (2) ernstig toetsenbord-focusprobleem: met tientallen tot honderden individueel focusbare monument-markers vóór de kaartbediening in de broncode moest een toetsenbordgebruiker eerst door alle markers tabben voor die "Toon mijn locatie"/"Overzicht"/kaartlagen kon bereiken — opgelost door die bediening vóór `#map` te plaatsen in `index.html` (puur volgorde, geen visuele wijziging, alles staat al `position:absolute`). Wat al goed stond: native `<dialog>` voor het monumentdetail (focus, Escape, focus-terugkeer werken correct), gelabelde formuliervelden, zichtbare focus-ring, aria-live statusregio's. Restpunt (bewust niet stilzwijgend opgelost, is een productkeuze): met honderden monumenten in beeld blijft de kaart zelf een lange, ongegroepeerde toetsenbord-tabreeks — oplossing (bv. kaart-markers niet individueel focusbaar maken, of een "sla markers over"-link) vraagt een aparte beslissing, zie hieronder.
+- [x] **Veiligheid verbeteren** — 2026-09-12: input-validatie (SPARQL/Overpass-querybouw, punten/afstanden) was al goed op orde; grootste ontbrekende stuk was rate limiting — toegevoegd via Cloudflare's `ratelimits`-binding (`wrangler.jsonc`, `server/index.ts`): 30 requests/60s per IP over alle `/api/*`-routes, voorkomt misbruik en het "opbranden" van de gratis Overpass/OSRM/RCE-diensten waar deze app op leunt.
+- [ ] **Kaart-markers: toetsenbord-tabreeks bij veel monumenten** — vervolg op de toegankelijkheidsfix hierboven. Met honderden monumenten in beeld (voor je een route maakt) is elke marker een los tab-stop; nog geen "sla door naar volgende sectie"-mechanisme. Opties: markers pas focusbaar maken na route-generatie (dan zijn het er hooguit 6, met de bestaande stop-lijst als alternatief), een "sla kaart over"-link toevoegen, of clustering. Vraagt een productkeuze, bewust nog niet doorgevoerd.
+- [ ] **Meer monumentencategorieën toevoegen** — uitbreiden van `themes` (`server/routing.ts`, nu: all/religious/industrial/defence/archaeology) met meer RCE-hoofdcategorieën, onder publieksvriendelijke namen.
+- [ ] **Turn-by-turn navigatie overwegen** — stapsgewijze route-instructies tijdens het lopen/fietsen (i.p.v. alleen de route op de kaart tonen). Vraagt live locatie-tracking, herberekening bij afwijken van route, en instructie-UI.
+- [x] **GitHub Action voor build/deploy overwegen** — 2026-09-12: `.github/workflows/deploy.yml` toegevoegd. `check`-job (typecheck + tests + build) draait op elke push en PR; `deploy`-job (`npm run deploy`, dus `wrangler deploy`) draait alleen na een geslaagde check bij een push naar `main`. **Actie vereist van jou voordat dit werkt:** voeg in de GitHub-repo (Settings → Secrets and variables → Actions) een secret `CLOUDFLARE_API_TOKEN` toe (een Cloudflare API-token met Workers-deployrechten). Als wrangler in CI klaagt over meerdere Cloudflare-accounts, moet er ook een `account_id` in `wrangler.jsonc` of een `CLOUDFLARE_ACCOUNT_ID`-secret bij. Tot die secret bestaat faalt de deploy-stap; de check-stap werkt sowieso.
+- [ ] **Kennisbank RCE** - Meer, recentere informatgie staat heel vaak op de Kennisbank van de RCE: Voorbeeld: https://kennis.cultureelerfgoed.nl/index.php/Monumenten/509407. Deze toevoegen onderaan de beschrijving bij bekijk in het monumentenregister.
 
-- Lokale branches `committ#5` en `committ#6` zijn restanten van eerdere sessies en kunnen weg zodra ze niet meer nodig zijn.
-- `charge_old/` (774 MB, oude schoolproject-bestanden) staat al in `.gitignore` maar neemt lokaal schijfruimte in.
-- Geen `LICENSE`-bestand — relevant zodra de repo publiek gedeeld wordt.
-- Geen `engines`-veld in `package.json` om de verwachte Node-versie vast te leggen.
-
-## Al gedaan (ter referentie)
-
-- CSS volledig herschreven (was vrijwel leeg) — moderne opmaak met werkende kaart, navigatie en locatie.
-- Cafés/parkeren/toiletten-bug gefixt (ontbrekende `User-Agent`-header naar Overpass).
-- Rand-bug in kaartlagen-/formulier-legends gefixt (root cause, niet per component).
-- Tests + `npm test` toegevoegd voor `server/routing.ts`.
-- Oude gemergede branches (`commit#1`, `Committ#2`, `committ#3`, `Committ#4`) opgeruimd.
-- README aangevuld met "Aan de slag"-sectie (dev/test/build/deploy-commando's).
+## Done (recent)
+- fix: #8 — langere route bij onvoldoende rijksmonumenten in de buurt
+- kaartlagen-label niet meer door rand heen
+- fix: kroegen

@@ -31,10 +31,19 @@ export async function roadRoute(base: string, mode: Mode, points: Point[]): Prom
   const snapDistances=Array.isArray(d.waypoints)?d.waypoints.map(w=>{const distance=record(w).distance;return typeof distance==='number'?distance:Infinity;}):[];
   return {distance:r.distance,duration:r.duration,geometry:{type:'LineString',coordinates},snapDistances};
 }
+const amenityGroups: Record<string,string[]> = {cafe:['cafe','bar','pub'],parking:['parking'],toilets:['toilets']};
 export async function pois(base: string, center: Point, radius: number, kinds: string[]) {
-  if(kinds.length===0 || kinds.some(k=>!['cafe','parking','toilets'].includes(k)))throw new HttpError(400,'Kies een geldige kaartlaag.');
-  const query=`[out:json][timeout:15];nwr(around:${Math.round(radius)},${center.lat},${center.lon})[amenity~"^(${kinds.join('|')})$"];out center 250;`;
+  if(kinds.length===0 || kinds.some(k=>!(k in amenityGroups)))throw new HttpError(400,'Kies een geldige kaartlaag.');
+  const kindByAmenity=Object.fromEntries(kinds.flatMap(k=>amenityGroups[k].map(a=>[a,k])));
+  const amenities=kinds.flatMap(k=>amenityGroups[k]);
+  const query=`[out:json][timeout:15];nwr(around:${Math.round(radius)},${center.lat},${center.lon})[amenity~"^(${amenities.join('|')})$"];out center 250;`;
   const d=record(await boundedJson(await fetch(base,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','User-Agent':'CHARGE/0.1 (heritage walking and cycling prototype)'},body:new URLSearchParams({data:query}),signal:AbortSignal.timeout(20000)})));
   if(!Array.isArray(d.elements))throw new HttpError(502,'Voorzieningen zijn tijdelijk niet beschikbaar.');
-  return d.elements.flatMap(e=>{const r=record(e);const c=r.center?record(r.center):r;const tags=record(r.tags||{});return typeof c.lat==='number'&&typeof c.lon==='number'?[{lat:c.lat,lon:c.lon,kind:tags.amenity,name:typeof tags.name==='string'?tags.name:'',openingHours:typeof tags.opening_hours==='string'?tags.opening_hours:''}]:[];});
+  return d.elements.flatMap(e=>{
+    const r=record(e);const c=r.center?record(r.center):r;const tags=record(r.tags||{});
+    const kind=kindByAmenity[typeof tags.amenity==='string'?tags.amenity:''];
+    const access=typeof tags.access==='string'?tags.access:'';
+    if(!kind || access==='private' || access==='no')return [];
+    return typeof c.lat==='number'&&typeof c.lon==='number'?[{lat:c.lat,lon:c.lon,kind,name:typeof tags.name==='string'?tags.name:'',openingHours:typeof tags.opening_hours==='string'?tags.opening_hours:''}]:[];
+  });
 }
