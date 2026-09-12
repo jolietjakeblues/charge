@@ -37,6 +37,16 @@ const poiGroups: Record<string,{tag:string;values:string[]}> = {
   toilets:{tag:'amenity',values:['toilets']},
   aed:{tag:'emergency',values:['defibrillator']},
 };
+// De publieke Overpass-instance is af en toe overbelast (responstijden liepen in tests
+// uiteen van ~1s tot 11s, met af en toe een 502) — één stille retry vangt dat soort
+// transiënte hikjes op voordat de gebruiker een foutmelding te zien krijgt.
+async function fetchOverpass(base: string, query: string): Promise<Response> {
+  const attempt=(timeout:number)=>fetch(base,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','User-Agent':'CHARGE/0.1 (heritage walking and cycling prototype)'},body:new URLSearchParams({data:query}),signal:AbortSignal.timeout(timeout)});
+  try { const response=await attempt(20000); if(response.ok) return response; throw new HttpError(502,'niet-ok'); }
+  // Kortere timeout op de retry: als de dienst al traag/onbereikbaar was, moet een gebruiker
+  // niet nog eens de volle 20s wachten voor hij alsnog een foutmelding krijgt.
+  catch { await new Promise(resolve=>setTimeout(resolve,500)); return attempt(10000); }
+}
 export async function pois(base: string, center: Point, radius: number, kinds: string[]) {
   if(kinds.length===0 || kinds.some(k=>!(k in poiGroups)))throw new HttpError(400,'Kies een geldige kaartlaag.');
   const kindByTagValue=new Map(kinds.flatMap(k=>poiGroups[k].values.map(v=>[`${poiGroups[k].tag}=${v}`,k])));
@@ -44,7 +54,7 @@ export async function pois(base: string, center: Point, radius: number, kinds: s
   for(const k of kinds){const {tag,values}=poiGroups[k];valuesByTag.set(tag,[...(valuesByTag.get(tag)||[]),...values]);}
   const clauses=[...valuesByTag.entries()].map(([tag,values])=>`nwr(around:${Math.round(radius)},${center.lat},${center.lon})[${tag}~"^(${values.join('|')})$"];`).join('');
   const query=`[out:json][timeout:15];(${clauses});out center 250;`;
-  const d=record(await boundedJson(await fetch(base,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','User-Agent':'CHARGE/0.1 (heritage walking and cycling prototype)'},body:new URLSearchParams({data:query}),signal:AbortSignal.timeout(20000)})));
+  const d=record(await boundedJson(await fetchOverpass(base,query)));
   if(!Array.isArray(d.elements))throw new HttpError(502,'Voorzieningen zijn tijdelijk niet beschikbaar.');
   return d.elements.flatMap(e=>{
     const r=record(e);const c=r.center?record(r.center):r;const tags=record(r.tags||{});
