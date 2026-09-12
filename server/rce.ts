@@ -81,7 +81,7 @@ SELECT ?uri ?number ?lat ?lon (MIN(STR(?n)) AS ?name) (MIN(STR(?f)) AS ?function
 } GROUP BY ?uri ?number ?lat ?lon`;
 }
 export async function nearby(url: string, center: Point, radius: number, theme: Theme) {
-  const numbers=theme==='murals' ? await muralNumbers().catch(()=>[]) : [];
+  const numbers=theme==='murals' ? await muralNumbers() : [];
   const rows=await queryRce(url, nearbyQuery(center,radius,theme,numbers));
   const seen=new Set<string>();
   const monuments: Monument[]=[];
