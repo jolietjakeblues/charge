@@ -23,7 +23,7 @@ async function api(path,options={}){
   const timeout=AbortSignal.timeout(120000);
   const signal=options.signal?AbortSignal.any([timeout,options.signal]):timeout;
   const response=await fetch(path,{...options,signal});
-  const data=await response.json();if(!response.ok)throw new Error(data.error||'Dit lukt nu niet. Probeer opnieuw.');return data;
+  const data=await response.json();if(!response.ok){const error=new Error(data.error||'Dit lukt nu niet. Probeer opnieuw.');error.status=response.status;throw error;}return data;
 }
 function invalidate(){
   state.revision++;state.controller?.abort();state.controller=null;state.route=null;
@@ -62,7 +62,7 @@ async function loadMonuments(){
     const data=await api(`/api/monuments?${new URLSearchParams({lat:state.start.lat,lon:state.start.lon,radius,theme:$('#theme').value})}`,{signal:controller.signal});
     if(revision!==state.revision)return;state.monuments=data.monuments;renderMonuments(state.monuments);
     mapStatus(data.monuments.length?`${data.monuments.length} rijksmonumenten in de selectie${data.truncated?' · Dit gebied bevat meer monumenten':''}`:'Geen monumenten voor dit thema in het zoekgebied. Kies een ander thema of een grotere afstand.');
-  }catch(error){if(controller.signal.aborted||revision!==state.revision)return;state.monuments=[];monumentsLayer.clearLayers();mapStatus('Monumenten laden lukt nu niet. Met ‘Maak mijn rondje’ probeer je het opnieuw.');}
+  }catch(error){if(controller.signal.aborted||revision!==state.revision)return;state.monuments=[];monumentsLayer.clearLayers();mapStatus(error.status===429?error.message:'Monumenten laden lukt nu niet. Met ‘Maak mijn rondje’ probeer je het opnieuw.');}
 }
 async function searchPlaces(){
   const query=$('#start').value.trim();if(query.length<2){status('Vul een plaats of adres in.',true);return;}
@@ -120,6 +120,8 @@ function renderRoute(data){
   const section=$('#route-result');section.replaceChildren();section.hidden=false;
   const heading=el('h2',mode()==='foot'?'Jouw erfgoedwandeling':'Jouw erfgoedfietstocht');heading.id='result-heading';section.append(heading);
   const stats=el('div',undefined,'route-stats');for(const [value,label] of [[km(data.distance),'berekende afstand'],[minutes(data.durationMinutes),'zonder bezoekstops'],[String(data.stops.length),'monumenten']]){const item=el('div');item.append(el('strong',value),el('span',label));stats.append(item);}section.append(stats);
+  const heritageText={gezicht:n=>`Je route loopt door beschermd stadsgezicht ${n}.`,werelderfgoed:n=>`Je route passeert Werelderfgoed: ${n}.`,linie:n=>`Je route doorkruist historische linie ${n}.`};
+  (data.heritage||[]).forEach(h=>section.append(el('p',(heritageText[h.kind]||(n=>n))(h.name),'route-heritage')));
   if(data.deviation>.15)section.append(el('p',`Dit rondje wijkt af van je wens van ${km(data.target)}. Met deze monumenten en paden kwamen we uit op ${km(data.distance)}.`, 'route-note'));
   if(data.truncated)section.append(el('p','Deze route gebruikt een selectie uit de monumenten in dit gebied.','route-note'));
   const list=el('ol',undefined,'stop-list');data.stops.forEach((m,i)=>{const li=el('li');const button=el('button');button.type='button';const copy=el('span');copy.append(el('strong',title(m)),el('small',`Rijksmonument ${m.number}`));button.append(el('span',String(i+1),'number'),copy);button.addEventListener('click',()=>{map.setView([m.lat,m.lon],16);void showDetail(m);});li.append(button);list.append(li);});section.append(list);
@@ -141,7 +143,7 @@ async function showDetail(m){
     description.textContent=data.descriptions.length?data.descriptions.join('\n\n'):'Voor dit monument is geen omschrijving opgehaald. Bekijk de bron voor meer informatie.';
     if(data.kennisbank){const kennisbank=el('a','Bekijk in de Kennisbank Cultureel Erfgoed','source-link');kennisbank.href=data.kennisbank;kennisbank.target='_blank';kennisbank.rel='noopener noreferrer';content.append(kennisbank);}
   }
-  catch(error){if(id===state.detailId)description.textContent='De omschrijving is nu niet beschikbaar. Je kunt het Monumentenregister openen.';}
+  catch(error){if(id===state.detailId)description.textContent=error.status===429?error.message:'De omschrijving is nu niet beschikbaar. Je kunt het Monumentenregister openen.';}
 }
 $('#close-dialog').addEventListener('click',()=>$('#monument-dialog').close());
 $('#monument-dialog').addEventListener('click',event=>{if(event.target===$('#monument-dialog')){const r=event.target.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)event.target.close();}});
@@ -157,7 +159,7 @@ async function loadPois(){
     for(const poi of data.pois){const popup=el('div');popup.append(el('strong',poi.name||labels[poi.kind]));if(poi.name)popup.append(el('div',labels[poi.kind]));if(poi.openingHours)popup.append(el('p',`Openingstijden volgens OpenStreetMap: ${poi.openingHours}`));
       const marker=L.marker([poi.lat,poi.lon],{icon:L.divIcon({className:`marker-poi marker-poi-${poi.kind}`,html:symbols[poi.kind]||'P',iconSize:[28,28]})}).bindPopup(popup).addTo(poisLayer);marker.getElement()?.setAttribute('aria-label',poi.name||labels[poi.kind]);}
     mapStatus(data.pois.length?'': 'Geen voorzieningen van dit type gevonden in dit kaartgebied.');
-  }catch(error){if(id===state.poiId)mapStatus('Voorzieningen laden lukt nu niet. Zoom in of probeer de kaartlaag opnieuw.');}
+  }catch(error){if(id===state.poiId)mapStatus(error.status===429?error.message:'Voorzieningen laden lukt nu niet. Zoom in of probeer de kaartlaag opnieuw.');}
 }
 $$('input[name="poi"]').forEach(input=>input.addEventListener('change',schedulePois));map.on('moveend',()=>{if($$('input[name="poi"]:checked').length)schedulePois();});
 tiles.on('tileerror',()=>mapStatus('Niet alle kaarttegels konden laden. Controleer je verbinding.'));
