@@ -161,7 +161,7 @@ button.primary:disabled{opacity:.65;cursor:progress}
 .map-panel{position:relative;background:var(--border)}
 #map{position:absolute;inset:0}
 .map-top{
-  position:absolute;top:16px;left:16px;right:16px;z-index:400;display:flex;justify-content:space-between;
+  position:absolute;top:16px;left:16px;right:16px;z-index:1000;display:flex;justify-content:space-between;
   align-items:flex-start;gap:10px;pointer-events:none;
 }
 .map-top>span{
@@ -177,7 +177,7 @@ button.primary:disabled{opacity:.65;cursor:progress}
 #fit{width:auto;border-radius:999px;padding:0 16px;font-size:13px;font-weight:600}
 
 .map-layers{
-  position:absolute;left:16px;bottom:56px;z-index:400;background:var(--panel);border:1px solid var(--border);
+  position:absolute;left:16px;bottom:56px;z-index:1000;background:var(--panel);border:1px solid var(--border);
   border-radius:12px;padding:26px 14px 10px;display:flex;flex-wrap:wrap;gap:6px 14px;box-shadow:var(--shadow);
 }
 .map-layers legend{
@@ -187,7 +187,7 @@ button.primary:disabled{opacity:.65;cursor:progress}
 .map-layers label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft)}
 
 .map-key{
-  position:absolute;left:16px;bottom:20px;z-index:400;display:flex;align-items:center;gap:8px;
+  position:absolute;left:16px;bottom:20px;z-index:1000;display:flex;align-items:center;gap:8px;
   font-size:12px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--border);
   padding:7px 12px;border-radius:999px;box-shadow:var(--shadow);
 }
@@ -195,7 +195,7 @@ button.primary:disabled{opacity:.65;cursor:progress}
 .key-line{width:22px;height:3px;border-radius:2px;background:var(--moss);display:inline-block}
 
 .map-status{
-  position:absolute;top:76px;left:16px;right:16px;z-index:400;background:var(--panel);border:1px solid var(--border);
+  position:absolute;top:76px;left:16px;right:16px;z-index:1000;background:var(--panel);border:1px solid var(--border);
   border-radius:10px;padding:9px 14px;font-size:13px;color:var(--ink-soft);box-shadow:var(--shadow);
 }
 
@@ -214,6 +214,7 @@ button.primary:disabled{opacity:.65;cursor:progress}
   display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;font-family:var(--font-mono);
   border:2px solid var(--panel);box-shadow:0 0 0 1.5px var(--gold);
 }
+.marker-poi-aed{background:#e2231a;color:#fff;font-size:16px;box-shadow:0 0 0 1.5px #e2231a}
 .leaflet-popup-content-wrapper{border-radius:12px}
 .leaflet-popup-content button{margin-top:6px;border:1px solid var(--border);background:var(--panel);border-radius:8px;padding:6px 10px;font-size:13px}
 
