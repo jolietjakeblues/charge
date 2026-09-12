@@ -36,7 +36,14 @@ export async function queryRce(url: string, query: string): Promise<Row[]> {
 const themePatterns = {
   religious:'kerk|kapel|klooster|synagoge|moskee|abdij|bedehuis',
   industrial:'molen|fabriek|industrie|gemaal|werkplaats|watertoren',
-  defence:'fort|vesting|poort|kazerne|bunker|kazemat|verdediging'
+  defence:'fort|vesting|poort|kazerne|bunker|kazemat|verdediging',
+  // RCE-hoofdcategorieën (zie data/pp_subtree_bebouwdeomgeving.zip), elk een curated subset
+  // met publieksvriendelijke naam — niet de volledige, vaak veel bredere hoofdcategorie.
+  castles:'kasteel|landhuis|buitenplaats|havezate|ridderhofstede|stins|borg|state',
+  government:'stadhuis|raadhuis|gemeentehuis|provinciehuis|gerechtsgebouw|rechtbank|postkantoor|politiebureau|gevangenis|kantongerecht',
+  cemeteries:'begraafplaats|kerkhof|grafkelder|grafmonument|mausoleum|urnenveld|crematorium',
+  warehouses:'pakhuis|loods|graanschuur|silo|veem|stapelhuis|beurs|waag|markthal',
+  culture:'museum|theater|schouwburg|bibliotheek|universiteit|hogeschool|academie|observatorium|sterrenwacht|concertgebouw|conservatorium|planetarium'
 };
 export function nearbyQuery(center: Point, radius: number, theme: Theme): string {
   const latDelta=radius/111000, lonDelta=radius/(111000*Math.cos(center.lat*Math.PI/180));
@@ -77,12 +84,22 @@ export async function nearby(url: string, center: Point, radius: number, theme: 
   }
   return {monuments,truncated:rows.length>=600};
 }
+async function kennisbankUrl(number: string): Promise<string|null> {
+  const kennisbank=`https://kennis.cultureelerfgoed.nl/index.php/Monumenten/${number}`;
+  try {
+    const res=await fetch(kennisbank,{method:'HEAD',headers:{'User-Agent':'CHARGE/0.1 (heritage walking and cycling prototype)'},signal:AbortSignal.timeout(4000)});
+    return res.ok ? kennisbank : null;
+  } catch { return null; }
+}
 export async function detail(url: string, number: string) {
   if(!/^\d{1,8}$/.test(number)) throw new Error('Ongeldig monumentnummer.');
-  const rows=await queryRce(url, `${prefix}
+  const [rows,kennisbank]=await Promise.all([
+    queryRce(url, `${prefix}
 SELECT DISTINCT ?description WHERE {
  GRAPH <${graph}> { ?uri ceo:rijksmonumentnummer "${number}"; ceo:heeftOmschrijving ?descriptionNode. }
  ?descriptionNode ceo:omschrijving ?description.
-} LIMIT 8`);
-  return {number,descriptions:[...new Set(rows.map(r=>r.description?.value).filter(Boolean))],source:`https://monumentenregister.cultureelerfgoed.nl/monumenten/${number}`};
+} LIMIT 8`),
+    kennisbankUrl(number)
+  ]);
+  return {number,descriptions:[...new Set(rows.map(r=>r.description?.value).filter(Boolean))],source:`https://monumentenregister.cultureelerfgoed.nl/monumenten/${number}`,kennisbank};
 }

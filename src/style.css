@@ -227,7 +227,7 @@ dialog::backdrop{background:rgba(15,26,23,.55);backdrop-filter:blur(2px)}
 #monument-content .eyebrow{display:block;margin-bottom:6px}
 #monument-content h2{font-size:22px;margin-bottom:6px}
 .description{white-space:pre-line;color:var(--ink-soft);font-size:14px;line-height:1.6;margin-top:10px}
-.source-link{display:inline-block;margin-top:14px;font-size:13px;font-weight:600;color:var(--moss-text)}
+.source-link{display:block;margin-top:14px;font-size:13px;font-weight:600;color:var(--moss-text)}
 
 /* ---------- responsive ---------- */
 @media(min-width:1400px){.workspace{grid-template-columns:420px 1fr}.sidebar{padding:36px}}
