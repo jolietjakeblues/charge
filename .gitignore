@@ -9,3 +9,6 @@ test-results/
 # Oude CHARGE-documenten, prototypes en rapporten
 charge_old/
 charge/_old/
+
+# Losse brondata (bv. RCE-thesaurusexports), niet nodig in de repo
+data/

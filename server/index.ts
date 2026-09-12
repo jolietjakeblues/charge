@@ -16,6 +16,8 @@ export default {
     if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
     try {
       if(request.headers.get('Sec-Fetch-Site')==='cross-site')throw new HttpError(403,'Open deze functie vanuit CHARGE.');
+      const {success}=await env.API_RATE_LIMITER.limit({key:request.headers.get('CF-Connecting-IP')||'local'});
+      if(!success)throw new HttpError(429,'Te veel verzoeken. Wacht even en probeer het opnieuw.');
       if(request.method==='GET' && url.pathname==='/api/places')return json({places:await geocode(url.searchParams.get('q')||'')});
       if(request.method==='GET' && url.pathname==='/api/monuments'){
         const center=pointFrom(url.searchParams);const radius=Number(url.searchParams.get('radius')||2500);

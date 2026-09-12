@@ -6,6 +6,9 @@
   "compatibility_flags": ["nodejs_compat"],
   "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
   "observability": { "enabled": false },
+  "ratelimits": [
+    { "name": "API_RATE_LIMITER", "namespace_id": "1", "simple": { "limit": 30, "period": 60 } }
+  ],
   "vars": {
     "RCE_MCP_URL": "https://rce-cho-mcp.onrender.com/mcp",
     "ROUTING_BASE_URL": "https://routing.openstreetmap.de",
