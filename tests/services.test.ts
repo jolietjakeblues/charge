@@ -68,6 +68,23 @@ test('pois: "aed" queries the emergency tag namespace, not amenity', async () =>
   assert.match(sentQuery, /emergency~"\^\(defibrillator\)\$"/);
 });
 
+test('pois: retries once after a failed Overpass request and still returns results', async () => {
+  let calls = 0;
+  const fetchImpl = (async () => {
+    calls++;
+    if (calls === 1) return new Response('bad gateway', { status: 502 });
+    return new Response(JSON.stringify({ elements: [{ lat: 52.1, lon: 5.3, tags: { amenity: 'toilets' } }] }), { status: 200 });
+  }) as typeof fetch;
+  const result = await withFetch(fetchImpl, () => pois('https://overpass.example', center, 500, ['toilets']));
+  assert.equal(calls, 2);
+  assert.equal(result.length, 1);
+});
+
+test('pois: gives up and surfaces an HttpError when both attempts fail', async () => {
+  const fetchImpl = (async () => new Response('bad gateway', { status: 502 })) as typeof fetch;
+  await assert.rejects(() => withFetch(fetchImpl, () => pois('https://overpass.example', center, 500, ['toilets'])), HttpError);
+});
+
 test('pois: combines amenity and emergency clauses when both are requested', async () => {
   const elements = [
     { lat: 52.1, lon: 5.3, tags: { amenity: 'cafe', name: 'Grand Café' } },
