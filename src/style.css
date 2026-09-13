@@ -232,6 +232,12 @@ dialog::backdrop{background:rgba(15,26,23,.55);backdrop-filter:blur(2px)}
 #monument-content h2{font-size:22px;margin-bottom:6px}
 .description{white-space:pre-line;color:var(--ink-soft);font-size:14px;line-height:1.6;margin-top:10px}
 .source-link{display:block;margin-top:14px;font-size:13px;font-weight:600;color:var(--moss-text)}
+.mural-detail{margin-top:18px;padding-top:14px;border-top:1px dashed var(--border)}
+.mural-detail h3{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.mural-item{margin-bottom:14px}
+.mural-item img{display:block;width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:8px}
+.mural-item strong{display:block;font-size:14px;color:var(--ink)}
+.mural-item p{font-size:13px;color:var(--ink-soft);line-height:1.5;margin-top:4px}
 
 /* ---------- responsive ---------- */
 @media(min-width:1400px){.workspace{grid-template-columns:420px 1fr}.sidebar{padding:36px}}

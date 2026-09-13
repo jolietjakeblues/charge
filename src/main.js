@@ -131,19 +131,39 @@ function renderRoute(data){
 function fit(){if(state.route){const bounds=L.geoJSON(state.route.geometry).getBounds();map.fitBounds(bounds,{padding:[50,65]});}else map.setView([state.start.lat,state.start.lon],mode()==='foot'?14:12);}
 $('#fit').addEventListener('click',fit);
 $('#locate-map').addEventListener('click',()=>$('#location').click());
+function renderMurals(container,data){
+  if(!data||!data.paintings.length)return;
+  container.append(el('h3','Muurschildering(en)'));
+  for(const p of data.paintings.slice(0,4)){
+    const item=el('div',undefined,'mural-item');
+    if(p.image){const img=document.createElement('img');img.src=p.image;img.alt=p.title;img.loading='lazy';item.append(img);}
+    item.append(el('strong',p.title));
+    const meta=[p.creator,p.period,p.genre].filter(Boolean).join(' · ');
+    if(meta)item.append(el('p',meta,'hint'));
+    if(p.description)item.append(el('p',p.description));
+    container.append(item);
+  }
+  const link=el('a','Bekijk in de Muurschilderingendatabase','source-link');link.href=data.explorerUrl;link.target='_blank';link.rel='noopener noreferrer';container.append(link);
+}
 async function showDetail(m){
   const id=++state.detailId;const dialog=$('#monument-dialog');const content=$('#monument-content');content.replaceChildren();
   content.append(el('span',`RIJKSMONUMENT ${m.number}`,'eyebrow'));const heading=el('h2',title(m));heading.id='monument-title';content.append(heading);
   if(m.function)content.append(el('p',m.function,'hint'));
   const description=el('p','Omschrijving ophalen…','description');content.append(description);
   const source=el('a','Bekijk in het Monumentenregister','source-link');source.href=`https://monumentenregister.cultureelerfgoed.nl/monumenten/${encodeURIComponent(m.number)}`;source.target='_blank';source.rel='noopener noreferrer';content.append(source);
+  const muralSection=m.hasMural?el('div',undefined,'mural-detail'):null;if(muralSection)content.append(muralSection);
   if(!dialog.open)dialog.showModal();
-  try{
-    const data=await api(`/api/monument?number=${encodeURIComponent(m.number)}`);if(id!==state.detailId)return;
-    description.textContent=data.descriptions.length?data.descriptions.join('\n\n'):'Voor dit monument is geen omschrijving opgehaald. Bekijk de bron voor meer informatie.';
-    if(data.kennisbank){const kennisbank=el('a','Bekijk in de Kennisbank Cultureel Erfgoed','source-link');kennisbank.href=data.kennisbank;kennisbank.target='_blank';kennisbank.rel='noopener noreferrer';content.append(kennisbank);}
-  }
-  catch(error){if(id===state.detailId)description.textContent=error.status===429?error.message:'De omschrijving is nu niet beschikbaar. Je kunt het Monumentenregister openen.';}
+  const detailTask=(async()=>{
+    try{
+      const data=await api(`/api/monument?number=${encodeURIComponent(m.number)}`);if(id!==state.detailId)return;
+      description.textContent=data.descriptions.length?data.descriptions.join('\n\n'):'Voor dit monument is geen omschrijving opgehaald. Bekijk de bron voor meer informatie.';
+      if(data.kennisbank){const kennisbank=el('a','Bekijk in de Kennisbank Cultureel Erfgoed','source-link');kennisbank.href=data.kennisbank;kennisbank.target='_blank';kennisbank.rel='noopener noreferrer';source.after(kennisbank);}
+    }
+    catch(error){if(id===state.detailId)description.textContent=error.status===429?error.message:'De omschrijving is nu niet beschikbaar. Je kunt het Monumentenregister openen.';}
+  })();
+  // Verrijking is optioneel: een falende muurschilderingen-opzoeking mag de hoofdomschrijving niet raken.
+  const muralsTask=muralSection?api(`/api/murals?number=${encodeURIComponent(m.number)}`).then(data=>{if(id===state.detailId)renderMurals(muralSection,data);}).catch(()=>{}):Promise.resolve();
+  await Promise.all([detailTask,muralsTask]);
 }
 $('#close-dialog').addEventListener('click',()=>$('#monument-dialog').close());
 $('#monument-dialog').addEventListener('click',event=>{if(event.target===$('#monument-dialog')){const r=event.target.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)event.target.close();}});
