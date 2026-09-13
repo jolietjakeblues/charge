@@ -1,6 +1,6 @@
 import {nearby,detail} from './rce.ts';
 import {heritageMatches,type HeritageMatch} from './heritage-areas.ts';
-import {muralNumbers} from './muurschilderingen.ts';
+import {muralNumbers,muralDetails} from './muurschilderingen.ts';
 import {distance,validPoint,targetDistance,selectStops,themes,type Theme,type Mode,type Point,type Monument} from './routing.ts';
 import {geocode,roadRoute,pois,boundedJson,HttpError,type RoadRoute} from './services.ts';
 
@@ -13,7 +13,7 @@ function pointFrom(params: URLSearchParams): Point {
 }
 function themeFrom(value:unknown):Theme { if(typeof value!=='string'||!themes.includes(value as Theme))throw new HttpError(400,'Kies een geldig erfgoedthema.');return value as Theme; }
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url=new URL(request.url);
     if(url.pathname==='/favicon.ico')return Response.redirect(new URL('/favicon.svg',url).toString(),301);
     if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
@@ -30,6 +30,10 @@ export default {
       if(request.method==='GET' && url.pathname==='/api/monument'){
         const number=url.searchParams.get('number')||'';if(!/^\d{1,8}$/.test(number))throw new HttpError(400,'Ongeldig monumentnummer.');
         return json(await detail(env.RCE_MCP_URL,number));
+      }
+      if(request.method==='GET' && url.pathname==='/api/murals'){
+        const number=url.searchParams.get('number')||'';if(!/^\d{1,8}$/.test(number))throw new HttpError(400,'Ongeldig monumentnummer.');
+        return json(await muralDetails(number));
       }
       if(request.method==='GET' && url.pathname==='/api/pois'){
         const center=pointFrom(url.searchParams);const radius=Number(url.searchParams.get('radius')||2000);
@@ -78,7 +82,7 @@ export default {
             new Promise<HeritageMatch[]>(resolve=>setTimeout(()=>resolve([]),8000)),
           ]),
           Promise.race([
-            muralNumbers().catch(()=>[] as string[]),
+            muralNumbers(ctx).catch(()=>[] as string[]),
             new Promise<string[]>(resolve=>setTimeout(()=>resolve([]),8000)),
           ]),
         ]);
