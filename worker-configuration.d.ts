@@ -6,7 +6,7 @@ interface __BaseEnv_Env {
 	ASSETS: Fetcher;
 	RCE_MCP_URL: "https://rce-cho-mcp.onrender.com/mcp";
 	ROUTING_BASE_URL: "https://routing.openstreetmap.de";
-	OVERPASS_URL: "https://overpass-api.de/api/interpreter";
+	OVERPASS_URL: "https://overpass.private.coffee/api/interpreter";
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
