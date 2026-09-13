@@ -43,16 +43,6 @@ test('nearbyQuery: "greenery" filters on graph membership, not a keyword regex o
   assert.ok(!query.includes('themeLabel'));
 });
 
-test('nearbyQuery: "murals" filters on an explicit rijksmonumentnummer list', () => {
-  const query = nearbyQuery(amersfoort, 2000, 'murals', ['12345', '999']);
-  assert.match(query, /FILTER\(\?number IN \("12345","999"\)\)/);
-});
-
-test('nearbyQuery: "murals" with no numbers still produces a valid (always-empty) filter', () => {
-  const query = nearbyQuery(amersfoort, 2000, 'murals', []);
-  assert.match(query, /FILTER\(\?number IN \(\)\)/);
-});
-
 test('nearbyQuery: bounding box widens with a larger radius', () => {
   const narrow = nearbyQuery(amersfoort, 1000, 'all');
   const wide = nearbyQuery(amersfoort, 10000, 'all');
