@@ -1,7 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { distance, type Point, type Monument, type Theme } from './routing.ts';
-import { muralNumbers } from './muurschilderingen.ts';
 
 export const prefix = `PREFIX ceo: <https://linkeddata.cultureelerfgoed.nl/def/ceo#>
 PREFIX geo: <http://www.opengis.net/ont/geosparql#>
@@ -50,7 +49,7 @@ const themePatterns = {
 // aangelegde tuin, park of plantsoen zijn staan in deze losse graph (geverifieerd: elke
 // ?uri erin komt ook voor met een rijksmonumentnummer in instanties-rce).
 const graphThemes = { greenery: 'https://linkeddata.cultureelerfgoed.nl/graph/groenaanleg' };
-export function nearbyQuery(center: Point, radius: number, theme: Theme, muralNumbers: string[] = []): string {
+export function nearbyQuery(center: Point, radius: number, theme: Theme): string {
   const latDelta=radius/111000, lonDelta=radius/(111000*Math.cos(center.lat*Math.PI/180));
   const typeFilter=theme==='archaeology' ? `?uri ceo:heeftMonumentAard <https://data.cultureelerfgoed.nl/term/id/rn/2/b673c8c1-5d93-496d-8f9e-89133d579d77>.` : '';
   const functionFilter=theme in themePatterns ? `FILTER EXISTS {
@@ -58,7 +57,6 @@ export function nearbyQuery(center: Point, radius: number, theme: Theme, muralNu
     ?concept skos:prefLabel ?themeLabel.
     FILTER(REGEX(STR(?themeLabel),"${themePatterns[theme as keyof typeof themePatterns]}","i"))
   }` : theme in graphThemes ? `FILTER EXISTS { GRAPH <${graphThemes[theme as keyof typeof graphThemes]}> { ?uri a ceo:Rijksmonument. } }`
-    : theme==='murals' ? `FILTER(?number IN (${muralNumbers.map(n=>JSON.stringify(n)).join(',')}))`
     : '';
   return `${prefix}
 SELECT ?uri ?number ?lat ?lon (MIN(STR(?n)) AS ?name) (MIN(STR(?f)) AS ?function) WHERE {
@@ -81,8 +79,7 @@ SELECT ?uri ?number ?lat ?lon (MIN(STR(?n)) AS ?name) (MIN(STR(?f)) AS ?function
 } GROUP BY ?uri ?number ?lat ?lon`;
 }
 export async function nearby(url: string, center: Point, radius: number, theme: Theme) {
-  const numbers=theme==='murals' ? await muralNumbers() : [];
-  const rows=await queryRce(url, nearbyQuery(center,radius,theme,numbers));
+  const rows=await queryRce(url, nearbyQuery(center,radius,theme));
   const seen=new Set<string>();
   const monuments: Monument[]=[];
   for(const r of rows){

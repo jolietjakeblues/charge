@@ -157,6 +157,7 @@ button.primary:disabled{opacity:.65;cursor:progress}
 }
 .stop-list strong{display:block;font-size:14px;color:var(--ink)}
 .stop-list small{color:var(--muted);font-size:12px}
+.stop-list .mural-badge{display:block;color:var(--accent-text);font-weight:600}
 .route-actions{display:flex;gap:10px}
 
 /* ---------- map ---------- */
