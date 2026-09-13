@@ -159,7 +159,7 @@ async function loadPois(){
     for(const poi of data.pois){const popup=el('div');popup.append(el('strong',poi.name||labels[poi.kind]));if(poi.name)popup.append(el('div',labels[poi.kind]));if(poi.openingHours)popup.append(el('p',`Openingstijden volgens OpenStreetMap: ${poi.openingHours}`));
       const marker=L.marker([poi.lat,poi.lon],{icon:L.divIcon({className:`marker-poi marker-poi-${poi.kind}`,html:symbols[poi.kind]||'P',iconSize:[28,28]})}).bindPopup(popup).addTo(poisLayer);marker.getElement()?.setAttribute('aria-label',poi.name||labels[poi.kind]);}
     mapStatus(data.pois.length?'': 'Geen voorzieningen van dit type gevonden in dit kaartgebied.');
-  }catch(error){if(id===state.poiId)mapStatus(error.status===429?error.message:'Voorzieningen laden lukt nu niet. Zoom in of probeer de kaartlaag opnieuw.');}
+  }catch(error){if(id===state.poiId)mapStatus(error.message||'Voorzieningen laden lukt nu niet. Probeer het later opnieuw.');}
 }
 $$('input[name="poi"]').forEach(input=>input.addEventListener('change',schedulePois));map.on('moveend',()=>{if($$('input[name="poi"]:checked').length)schedulePois();});
 tiles.on('tileerror',()=>mapStatus('Niet alle kaarttegels konden laden. Controleer je verbinding.'));

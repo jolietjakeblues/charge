@@ -41,11 +41,15 @@ const poiGroups: Record<string,{tag:string;values:string[]}> = {
 // uiteen van ~1s tot 11s, met af en toe een 502) — één stille retry vangt dat soort
 // transiënte hikjes op voordat de gebruiker een foutmelding te zien krijgt.
 async function fetchOverpass(base: string, query: string): Promise<Response> {
-  const attempt=(timeout:number)=>fetch(base,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','User-Agent':'CHARGE/0.1 (heritage walking and cycling prototype)'},body:new URLSearchParams({data:query}),signal:AbortSignal.timeout(timeout)});
-  try { const response=await attempt(20000); if(response.ok) return response; throw new HttpError(502,'niet-ok'); }
+  const attempt=(timeout:number)=>fetch(base,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','User-Agent':'CHARGE/0.1 (heritage walking and cycling prototype)'},body:new URLSearchParams({data:query}),signal:AbortSignal.timeout(timeout)}).catch(()=>null);
+  let response=await attempt(20000);
   // Kortere timeout op de retry: als de dienst al traag/onbereikbaar was, moet een gebruiker
   // niet nog eens de volle 20s wachten voor hij alsnog een foutmelding krijgt.
-  catch { await new Promise(resolve=>setTimeout(resolve,500)); return attempt(10000); }
+  if(!response||!response.ok){await new Promise(resolve=>setTimeout(resolve,500));response=await attempt(10000);}
+  if(!response)throw new HttpError(502,'De voorzieningendienst reageert niet.');
+  if(response.status===429)throw new HttpError(503,'De voorzieningendienst is tijdelijk te druk. Probeer het over een minuut opnieuw.');
+  if(!response.ok)throw new HttpError(502,`De voorzieningendienst gaf een fout terug (HTTP ${response.status}).`);
+  return response;
 }
 export async function pois(base: string, center: Point, radius: number, kinds: string[]) {
   if(kinds.length===0 || kinds.some(k=>!(k in poiGroups)))throw new HttpError(400,'Kies een geldige kaartlaag.');
