@@ -41,3 +41,7 @@ Geen extra configuratie nodig: de externe diensten (RCE-CHO, OSRM, Overpass) sta
 ## Status
 
 CHARGE is een werkende proefversie in ontwikkeling.
+
+## Herkomst en dank
+
+CHARGE begon als opdracht van de Rijksdienst voor het Cultureel Erfgoed voor het vak Ontwerpen van Interactieve Systemen aan de Universiteit Utrecht (cursusjaar 2023-2024). Dank aan Ruben Schalk (RCE) voor de begeleiding, en aan de studenten van dat vak voor het oorspronkelijke ontwerpwerk waarop deze versie voortbouwt.
