@@ -12,3 +12,6 @@ charge/_old/
 
 # Losse brondata (bv. RCE-thesaurusexports), niet nodig in de repo
 data/
+
+# Editor/IDE config
+.claude/
